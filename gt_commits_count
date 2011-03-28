@@ -26,6 +26,6 @@ entries = @projects.map do |globbed_path|
 end.compact.flatten
 
 puts <<-STATS
-my commits since yesterday: #{total} total
+#{total} commit(s) since yesterday
 #{entries.join("\n")}
 STATS
