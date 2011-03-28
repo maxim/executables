@@ -8,13 +8,24 @@ require "#{File.expand_path(File.dirname(__FILE__))}/support/helpers"
 options_for __FILE__, :author   => { :required => true,
                                      :text => 'Name of author whose commits to count.'},
                       :projects => { :required => true, :type => Array,
-                                     :text => 'List of paths to projects in which to count commits.'}
+                                     :text => 'List of paths to projects in which to count commits.'},
+                      :sticky   => { :required => false, :type => Array,
+                                     :text => 'List of paths to projects which should always be displayed (even when count 0).'}
 
-entries = @projects.map do |path|
-  "  #{`cd #{path} && /usr/local/bin/git log --all --since=yesterday --until=today --pretty=oneline --author=#{@author} | wc -l`.strip} in #{File.basename(path)}"
-end
+total = 0
+
+entries = @projects.map do |globbed_path|
+
+  Dir[globbed_path].map do |dir|
+    count = `cd #{dir} && /usr/local/bin/git log --all --since=yesterday --until=today --pretty=oneline --author=#{@author} | wc -l`.strip.to_i
+    next if count == 0 && !@sticky.include?(dir)
+    total += count
+    "  #{count} in #{File.basename(dir).downcase}"
+  end.compact.flatten
+
+end.compact.flatten
 
 puts <<-STATS
-my commits since yesterday
+my commits since yesterday: #{total} total
 #{entries.join("\n")}
 STATS
